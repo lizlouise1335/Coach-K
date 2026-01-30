@@ -2,88 +2,132 @@
 //  TimerManager.swift
 //  Written by Liz Smith
 //
-//  Includes button functionality and timer countdown functionality.
-//
+//  Manages timer state and countdown functionality for HIIT workouts
 
 import Foundation
 import SwiftUI
 import AVFoundation
+
 class TimerManager: ObservableObject {
-    
+
+    // MARK: - Published Properties
+
     @Published var timerMode: TimerMode = .initial
-    @Published var secondsLeft = UserDefaults.standard.integer(forKey: "timerLength")
-    @Published var pickerMode: PickerMode = .one
-    @Published var volume: Volume = .off
-    @Published var rounds = 0
-    @Published var mode: pickity = .work
-    
-    var timer = Timer()
-    
-    // SET TIMER LENGTH
-    func setTimerLength(minutes: Int) {
-        let defaults = UserDefaults.standard
-        
-        defaults.set(minutes, forKey: "timerLength")
-        secondsLeft = minutes
-        
-    }
-    
-    // SET INITIAL ROUND NBR
-    func setRounds(rnds: Int){
-        self.rounds = rnds
-    }
-    
-    // START FUNCTIONALITY
-    func start(minute1: Int, minutes2: Int, minutes3: Int) {
-        var tea = self.rounds // set number of rounds through the time intervals
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true, block: { timer in
-            
-            if self.secondsLeft == 0 && self.pickerMode == .one {
-                self.setTimerLength(minutes: minutes2)
-                self.pickerMode = .two
+    @Published var secondsLeft: Int = 0
+    @Published var workoutState: WorkoutState = .prep
+    @Published var audioState: AudioState = .off
+    @Published var remainingRounds: Int = 0
 
-            } else if self.secondsLeft == 0 && self.pickerMode == .two {
-                self.setTimerLength(minutes: minutes3)
-                self.pickerMode = .three
+    // MARK: - Private Properties
 
-            } else if self.secondsLeft == 0 && self.pickerMode == .three {
-                tea -= 1
-                
-                if tea > 0 {
-                    self.setTimerLength(minutes: minutes2)
-                    self.pickerMode = .two
-                } else {
-                    self.pickerMode = .one
-                    self.reset(minu: minute1)
-                }
-            } else {
-                self.timerMode = .running
-                self.secondsLeft -= 1
-                if self.volume == .on {
-                    if self.secondsLeft < 4 && self.secondsLeft > 0{
-                        AudioServicesPlaySystemSound(1075) // 1075, fun audio stuff
-                    } else if self.secondsLeft == 0{
-                        AudioServicesPlaySystemSound(1072) // 1072, fun audio stuff
-                    }
-                }
-            }
-        })
+    private var timer: Timer?
+    private var configuration: WorkoutConfiguration?
+
+    // MARK: - Configuration
+
+    /// Sets up the workout with given configuration
+    func configure(with workout: WorkoutConfiguration) {
+        configuration = workout
+        remainingRounds = workout.rounds
+        secondsLeft = workout.prepDuration
+        workoutState = .prep
+        timerMode = .initial
     }
-    
-    // RESET BUTTON FUNCTIONALITY
-    func reset(minu: Int) {
-        self.pickerMode = .one
-        self.timerMode = .initial
-        self.setTimerLength(minutes: minu)
-        self.secondsLeft = UserDefaults.standard.integer(forKey: "timerLength") // changed to a reset time
-        timer.invalidate()
+
+    /// Legacy support for setting rounds
+    func setRounds(rounds: Int) {
+        remainingRounds = rounds
     }
-    
-    
-    //PAUSE MODE FUNCTIONALITY
+
+    // MARK: - Timer Control
+
+    /// Starts or resumes the timer with given durations
+    func start(prepDuration: Int, workDuration: Int, restDuration: Int) {
+        // Invalidate existing timer to prevent multiple timers running
+        timer?.invalidate()
+
+        timerMode = .running
+
+        timer = Timer.scheduledTimer(withTimeInterval: TimerConstants.timerInterval, repeats: true) { [weak self] _ in
+            self?.tick(prepDuration: prepDuration, workDuration: workDuration, restDuration: restDuration)
+        }
+    }
+
+    /// Pauses the timer
     func pause() {
-        self.timerMode = .paused
-        timer.invalidate()
+        timerMode = .paused
+        timer?.invalidate()
+        timer = nil
     }
-    
+
+    /// Resets the timer to initial state
+    func reset(prepDuration: Int) {
+        timer?.invalidate()
+        timer = nil
+        workoutState = .prep
+        timerMode = .initial
+        secondsLeft = prepDuration
+
+        // Reset rounds to configured value
+        if let config = configuration {
+            remainingRounds = config.rounds
+        }
+    }
+
+    // MARK: - Private Timer Logic
+
+    private func tick(prepDuration: Int, workDuration: Int, restDuration: Int) {
+        // Handle phase transitions when timer reaches zero
+        if secondsLeft == 0 {
+            handlePhaseTransition(prepDuration: prepDuration, workDuration: workDuration, restDuration: restDuration)
+            return
+        }
+
+        // Countdown
+        secondsLeft -= 1
+
+        // Play audio feedback if enabled
+        playAudioFeedback()
+    }
+
+    private func handlePhaseTransition(prepDuration: Int, workDuration: Int, restDuration: Int) {
+        switch workoutState {
+        case .prep:
+            // Transition from prep to work
+            workoutState = .work
+            secondsLeft = workDuration
+
+        case .work:
+            // Transition from work to rest
+            workoutState = .rest
+            secondsLeft = restDuration
+
+        case .rest:
+            // Decrement rounds and either repeat or finish
+            remainingRounds -= 1
+
+            if remainingRounds > 0 {
+                // More rounds remaining - go back to work
+                workoutState = .work
+                secondsLeft = workDuration
+            } else {
+                // Workout complete - reset to initial state
+                reset(prepDuration: prepDuration)
+            }
+        }
+    }
+
+    private func playAudioFeedback() {
+        guard audioState == .on else { return }
+
+        // Play countdown ticks in final seconds
+        if secondsLeft <= AudioConstants.countdownThreshold && secondsLeft > 0 {
+            AudioServicesPlaySystemSound(AudioConstants.countdownTick)
+        }
+        // Play completion sound at zero
+        else if secondsLeft == 0 {
+            AudioServicesPlaySystemSound(AudioConstants.phaseComplete)
+        }
+    }
 }
+
