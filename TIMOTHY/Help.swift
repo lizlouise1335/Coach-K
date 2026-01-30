@@ -2,76 +2,60 @@
 //  Help.swift
 //  Written by Liz Smith
 //
-//  Cases for the following:
-//  Volume Button
-//  Timer Mode
-//  Timer Extra-Display
-//  Picker Mode
-//
-//  Additionally converts seconds to hours, minutes, and seconds
+//  Enums and helper functions for:
+//  - Audio settings
+//  - Timer states
+//  - Workout phases
+//  - Time formatting utilities
 
 import Foundation
 
+// MARK: - Audio Settings
 
-// Volume Button
-enum Volume {
+enum AudioState {
     case off
     case on
 }
 
-// Timer Running Mode
+// MARK: - Timer States
+
 enum TimerMode {
     case running
     case paused
     case initial
 }
 
-// Mode of Work the user is in time wise once clicker is running - Prep, Work, or Rest
-enum PickerMode {
-    case one //prep
-    case two //work
-    case three //rest
-    
-    // for display
-    var pickString: String {
+// MARK: - Workout Phases
+
+/// Represents the current phase of the workout (prep, work, or rest)
+enum WorkoutState {
+    case prep
+    case work
+    case rest
+
+    var displayText: String {
         switch self {
-        case .one:
+        case .prep:
             return "Ready?"
-        case .two:
+        case .work:
             return "Work!"
-        case .three:
+        case .rest:
             return "Rest."
         }
     }
 }
 
-// Picker Display Cases (for when setting timer)
-enum pickity {
-    case work
-    case rest
-    case prepround
-    
-    var pickityMode: String {
-        switch self {
-        case .work:
-            return "Work"
-        case .rest:
-            return "Rest"
-        case .prepround:
-            return "Prep"
-        }
-    }
-}
+// MARK: - Time Formatting
 
-// Converts total seconds to hours, minutes, and seconds
+/// Converts total seconds to formatted time string (HH:MM:SS)
 func secondsToMinutesAndSeconds(seconds: Int) -> String {
-    let hours = "\(seconds / 3600)"
-    let minutes = "\((seconds % 3600) / 60)"
-    let seconds = "\((seconds % 3600) % 60)"
-    
-    let hourStamp = hours.count > 1 ? hours : "0" + hours
-    let minuteStamp = minutes.count > 1 ? minutes : "0" + minutes
-    let secondStamp = seconds.count > 1 ? seconds : "0" + seconds
-    
-    return "\(hourStamp) : \(minuteStamp) : \(secondStamp)"
+    let hours = seconds / 3600
+    let minutes = (seconds % 3600) / 60
+    let secs = (seconds % 3600) % 60
+
+    let hourString = String(format: "%02d", hours)
+    let minuteString = String(format: "%02d", minutes)
+    let secondString = String(format: "%02d", secs)
+
+    return "\(hourString) : \(minuteString) : \(secondString)"
 }
