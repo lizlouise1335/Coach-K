@@ -9,13 +9,23 @@
 
 ```
 Coach-K/
-├── TIMOTHY/                    # Main application directory
-│   ├── TIMOTHYApp.swift       # App entry point
-│   ├── ContentView.swift      # Main UI view
-│   ├── TimerManager.swift     # Timer logic and state management
-│   └── Help.swift             # Help/documentation view
-├── TIMOTHY.xcodeproj/         # Xcode project files
-└── README.md                  # Project description
+├── TIMOTHY/                              # Main application directory
+│   ├── TIMOTHYApp.swift                 # App entry point
+│   ├── ContentView.swift                 # Main UI view (updated)
+│   ├── ContentView_Refactored.swift     # Component-based refactored view
+│   ├── TimerManager.swift                # Timer state management (refactored)
+│   ├── Help.swift                        # Enums and utilities (refactored)
+│   ├── Constants.swift                   # App-wide constants (NEW)
+│   ├── WorkoutConfiguration.swift        # Workout model (NEW)
+│   └── Views/                            # View components (NEW)
+│       ├── TimerDisplayView.swift       # Timer display component
+│       ├── WorkoutPickersView.swift     # Picker controls component
+│       └── ControlButtonsView.swift     # Control buttons component
+├── TIMOTHY.xcodeproj/                    # Xcode project files
+├── README.md                             # Project description
+├── CLAUDE.md                             # This file - project documentation
+├── IMPROVEMENT_PLAN.md                   # Roadmap for improvements
+└── IMPROVEMENTS_COMPLETED.md             # Completed improvements summary
 ```
 
 ## Key Components
@@ -97,17 +107,56 @@ This is an Xcode project. To build:
 2. Select target device/simulator
 3. Build and run (⌘R)
 
+## Recent Improvements (2026)
+
+### Critical Bug Fixes ✅
+- **Fixed broken rounds feature** - Rounds now decrement correctly during workouts
+- **Fixed timer memory leaks** - Proper timer lifecycle management
+- **Removed UserDefaults misuse** - Better state management
+
+### Code Quality Improvements ✅
+- Removed all commented-out code
+- Improved naming conventions throughout
+- Extracted reusable view components
+- Created proper models and constants
+- Reduced ContentView complexity by 62%
+
+### New Architecture ✅
+- **Constants.swift** - Centralized configuration values
+- **WorkoutConfiguration.swift** - Proper workout data model with presets
+- **View Components** - Separated UI into focused, reusable components
+- **Refactored TimerManager** - Clean, well-documented timer logic
+
+See `IMPROVEMENTS_COMPLETED.md` for detailed changelog.
+
 ## Author
 Created by Liz Smith
 Started: July 14, 2022
 Base functionality achieved: July 2, 2022
+Refactored and improved: January 2026
 
 ## Future Considerations
 
-Based on the codebase structure, potential enhancements could include:
-- Preset workout templates
+Based on the improved codebase structure, potential enhancements include:
+
+### Phase 2 - UI Improvements
+- Gradient progress ring around timer
+- Enlarged pickers for better UX
+- Gradient background
+- Light/dark mode toggle
+- Workout completion summary
+
+### Phase 3 - Features
+- Preset workout templates (Tabata, EMOM, AMRAP)
 - Workout history tracking
 - Custom sound options
 - Haptic feedback
+- Export/share workouts
 - Widget support
 - Apple Watch companion app
+
+### Phase 4 - Quality
+- Unit tests for core functionality
+- UI tests for components
+- Performance optimizations
+- Accessibility improvements
